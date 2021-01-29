@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>websocket延时测试</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<style type="text/css">
+html,body{font-family:"Microsoft YaHei",sans-serif;padding:0;margin:0;background:#faf9f7;color:#222;font-size:16px;font-weight:300;}
+		</style>
+	</head>
+	<body>
+		<div style="height:120px;width:300px;margin:auto;background:#0f0;text-align:center;line-height:120px;font-size:30px;font-weight:500;" id="button_for_time">点击开始测试延时</div>
+		<script>
+//var tmp =""; for (i in button_for_time) { tmp=tmp + "\n"+i; } console.debug(tmp);	//这个是显示子类的
+var startTime = Date.now();	//Date.now() 方法返回自1970年1月1日 00:00:00 UTC到当前时间的毫秒数
+var setInterval_id = null;	//用来防止内存泄漏的
+//var ws = new WebSocket("wss://echo.websocket.org");
+var ws = new WebSocket('ws://localhost:8765');
+//var ws = new WebSocket('ws://192.168.0.102:8765');
+ws.onopen = function(evt) {
+	console.log("Connection open ..."); 
+	ws.send("Hello WebSockets!");
+};
+button_for_time.onclick = function () {	//这是发出信号
+	try { clearInterval(setInterval_id); } catch(error) { }	//防止内存泄漏，取消上一个计时器的内存
+	startTime = Date.now();
+	try { ws.send("1"); } catch(error) { button_for_time.innerText = "ws尚未连接成功"; return;}	
+	setInterval_id = setInterval(function() {
+		var elapsedTime = Date.now() - startTime;
+		button_for_time.innerText = elapsedTime + "ms";
+	}, 1);	//milliseconds，不精确
+}
+ws.onmessage = function(evt) {
+	try { clearInterval(setInterval_id); } catch(error) { }	//停止计时
+	console.log( "Received Message: " + evt.data);
+	var elapsedTime = Date.now() - startTime; button_for_time.innerText = elapsedTime + "ms";
+	startTime = Date.now();
+//	ws.close();
+};
+ws.onclose = function(evt) {
+	console.log("Connection closed.");
+	ws=null;
+};
+		</script>
+	</body>
+</html>
